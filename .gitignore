@@ -1,39 +1,66 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+request/__pycache__/
+request/*.py[cod]
+request/*$py.class
+
+parse__pycache__/
+parse*.py[cod]
+parse*$py.class
 
 # C extensions
 *.so
 
 # Distribution / packaging
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+request/build/
+request/develop-eggs/
+request/dist/
+request/downloads/
+request/eggs/
+request/.eggs/
+request/lib/
+request/lib64/
+request/parts/
+request/sdist/
+request/var/
+request/wheels/
+request/*.egg-info/
+request/.installed.cfg
+request/*.egg
+request/MANIFEST
+
+parse/build/
+parse/develop-eggs/
+parse/dist/
+parse/downloads/
+parse/eggs/
+parse/.eggs/
+parse/lib/
+parse/lib64/
+parse/parts/
+parse/sdist/
+parse/var/
+parse/wheels/
+parse/*.egg-info/
+parse/.installed.cfg
+parse/*.egg
+parse/MANIFEST
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+request/*.manifest
+request/*.spec
+
+parse/*.manifest
+parse/*.spec
 
 # Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+request/pip-log.txt
+request/pip-delete-this-directory.txt
+
+parse/pip-log.txt
+parse/pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -67,13 +94,15 @@ instance/
 docs/_build/
 
 # PyBuilder
-target/
+request/target/
 
+parse/target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
 # pyenv
-.python-version
+request/.python-version
+parse/.python-version
 
 # celery beat schedule file
 celerybeat-schedule
@@ -82,13 +111,21 @@ celerybeat-schedule
 *.sage.py
 
 # Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+request/.env
+request/.venv
+request/env/
+request/venv/
+request/ENV/
+request/env.bak/
+request/venv.bak/
+
+parse/.env
+parse/.venv
+parse/env/
+parse/venv/
+parse/ENV/
+parse/env.bak/
+parse/venv.bak/
 
 # Spyder project settings
 .spyderproject
