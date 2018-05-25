@@ -12,6 +12,8 @@ import (
 )
 
 var (
+	htmlWait = make(chan struct{})
+
 	owari bool
 	mu    sync.RWMutex
 )
@@ -84,11 +86,12 @@ func getHTML(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+REFETCH:
 	html, isDrained, err := scheduler.PopHTML()
 	if isDrained {
-		stdout.Println("HTML drained, waiting.")
-		w.WriteHeader(404)
-		return
+		stdout.Println("HTML temporarily drained, waiting.")
+		<-htmlWait
+		goto REFETCH
 	}
 	if err != nil {
 		stderr.Println("getHTML:", err)
@@ -123,6 +126,11 @@ func postHTML(w http.ResponseWriter, r *http.Request) {
 		stderr.Println("postHTML:", err)
 		w.WriteHeader(400)
 		return
+	}
+
+	select {
+	case htmlWait <- struct{}{}:
+	default:
 	}
 
 	w.WriteHeader(204)
