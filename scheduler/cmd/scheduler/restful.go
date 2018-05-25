@@ -30,7 +30,7 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url, isDrained, err := scheduler.PopURL()
+	url, isDrained, err := scheduler.PopURL(r.Context())
 	if isDrained {
 		stdout.Println("URL drained!")
 		mu.Lock()
@@ -60,7 +60,7 @@ func postURL(w http.ResponseWriter, r *http.Request) {
 		if url == "" {
 			continue
 		}
-		if err := scheduler.PushURL(url); err != nil {
+		if err := scheduler.PushURL(r.Context(), url); err != nil {
 			stderr.Printf("pushURL (%s): %s", url, err)
 			// return
 		}
@@ -87,11 +87,15 @@ func getHTML(w http.ResponseWriter, r *http.Request) {
 	}
 
 REFETCH:
-	html, isDrained, err := scheduler.PopHTML()
+	html, isDrained, err := scheduler.PopHTML(r.Context())
 	if isDrained {
 		stdout.Println("HTML temporarily drained, waiting.")
-		<-htmlWait
-		goto REFETCH
+		select {
+		case <-htmlWait:
+			goto REFETCH
+		case <-r.Context().Done():
+			return
+		}
 	}
 	if err != nil {
 		stderr.Println("getHTML:", err)
@@ -122,7 +126,7 @@ func postHTML(w http.ResponseWriter, r *http.Request) {
 	}
 
 	html := buf.String()
-	if err := scheduler.PushHTML(html); err != nil {
+	if err := scheduler.PushHTML(r.Context(), html); err != nil {
 		stderr.Println("postHTML:", err)
 		w.WriteHeader(400)
 		return
