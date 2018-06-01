@@ -1,8 +1,4 @@
 # Byte-compiled / optimized / DLL files
-request/__pycache__/
-request/*.py[cod]
-request/*$py.class
-
 parse__pycache__/
 parse*.py[cod]
 parse*$py.class
@@ -12,23 +8,6 @@ parse*$py.class
 
 # Distribution / packaging
 .Python
-request/build/
-request/develop-eggs/
-request/dist/
-request/downloads/
-request/eggs/
-request/.eggs/
-request/lib/
-request/lib64/
-request/parts/
-request/sdist/
-request/var/
-request/wheels/
-request/*.egg-info/
-request/.installed.cfg
-request/*.egg
-request/MANIFEST
-
 parse/build/
 parse/develop-eggs/
 parse/dist/
@@ -49,15 +28,10 @@ parse/MANIFEST
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
-request/*.manifest
-request/*.spec
-
 parse/*.manifest
 parse/*.spec
 
 # Installer logs
-request/pip-log.txt
-request/pip-delete-this-directory.txt
 
 parse/pip-log.txt
 parse/pip-delete-this-directory.txt
@@ -111,14 +85,6 @@ celerybeat-schedule
 *.sage.py
 
 # Environments
-request/.env
-request/.venv
-request/env/
-request/venv/
-request/ENV/
-request/env.bak/
-request/venv.bak/
-
 parse/.env
 parse/.venv
 parse/env/
@@ -140,3 +106,5 @@ parse/venv.bak/
 # mypy
 .mypy_cache/
 .vscode/
+
+request/node_modules
