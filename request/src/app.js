@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const baseURL = 'http://172.16.0.12:6001/'
+const baseURL = 'https://api.ekyu.moe/d-spider/v1/'
+
 
 /**
  * 自定义错误，退出爬虫
@@ -9,6 +10,13 @@ class ExitError extends Error {
   constructor(message) {
     super(message)
     this.name = 'ExitError'
+  }
+}
+
+class WaitError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'WaitError'
   }
 }
 
@@ -22,7 +30,6 @@ async function request(adress) {
     if (resp.status === 200) return resp.data
   } catch (error) {
     console.log(error)
-    throw Error('')
   }
 }
 
@@ -33,7 +40,7 @@ async function request(adress) {
 async function post_data(data) {
   // 向中间件发送data
   try {
-    let resp = await axios.post(baseURL + 'POST', data)
+    let resp = await axios.post(baseURL + 'HTML', data)
   } catch (error) {
     console.log(error)
   }
@@ -47,22 +54,17 @@ async function post_data(data) {
 async function get_url() {
   // 向中间件获取需要请求的URL
   try {
-    let adress = baseURL + 'GET'
-    let resp = await axios.get(adress)
+    let adress = baseURL + 'URL'
+    let resp = await axios.get(adress, { retry: 5, retryDelay: 1000 })
+    console.log(resp.data)
       // FIXME: 添加状态，暂停向中间件请求url
-    if (resp.status === 404)
-      throw Error('暂停，等待url发送')
-    else if (resp.data === 410)
+    if (resp.status === 410)
       throw new ExitError('停止爬虫')
-    return resp.data
+    else if (resp.status === 200 || resp.status === 204)
+      return resp.data
   } catch (error) {
-    console.log(error)
-    if (error instanceof ExitError) {
-      throw new ExitError()
-    }
+    throw new WaitError('wait a moment')
   }
-  console.log(resp.data)
-  return resp.data
 }
 
 /**
@@ -77,7 +79,10 @@ async function task() {
       let resp = await request(url)
       await post_data(resp)
     } catch (error) {
-      return '退出爬虫'
+      if (error instanceof ExitError) {
+        return '退出爬虫'
+      }
+      console.log(error)
     }
   }
 }
@@ -93,31 +98,3 @@ function main() {
 }
 
 main()
-
-
-
-
-
-
-
-// while (true) {
-console.log('start')
-axios.get(baseURL + 'URL')
-  .then(resp => {
-    console.log(resp.data)
-    let URL = resp.data
-    axios.get(URL)
-      .then(data => {
-        axios.post(baseURL + 'HTML', data.data)
-          .then(res => {
-            console.log(res)
-          })
-      })
-      .catch(e => {
-        console.log(e)
-      })
-  })
-  .catch(err => {
-    console.log(err)
-  })
-  // }
