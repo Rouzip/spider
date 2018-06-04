@@ -12,32 +12,45 @@ import (
 )
 
 var (
+	urlWait  = make(chan struct{})
 	htmlWait = make(chan struct{})
 
-	owari bool
-	mu    sync.RWMutex
+	urlFb, htmlFb     bool
+	urlJobs, htmlJobs uint
+	urlMu, htmlMu     sync.RWMutex
 )
+
+func isOwari() bool {
+	urlMu.RLock()
+	htmlMu.RLock()
+
+	owari := urlFb && htmlFb &&
+		urlJobs == 0 && htmlJobs == 0
+
+	htmlMu.RUnlock()
+	urlMu.RUnlock()
+
+	return owari
+}
 
 func getURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Length", "0")
 
-	mu.RLock()
-	o := owari
-	mu.RUnlock()
-	if o {
-		stdout.Println("URL drained! (yet again)")
-		w.WriteHeader(410) // 410 Gone
-		return
-	}
-
+REFETCH:
 	url, isDrained, err := scheduler.PopURL(r.Context())
 	if isDrained {
-		stdout.Println("URL drained!")
-		mu.Lock()
-		owari = true
-		mu.Unlock()
-		w.WriteHeader(410)
-		return
+		if isOwari() {
+			stdout.Println("OWATTA! (from getURL)")
+			w.WriteHeader(410)
+			return
+		}
+		stdout.Println("URL temporarily drained, waiting.")
+		select {
+		case <-urlWait:
+			goto REFETCH
+		case <-r.Context().Done():
+			return
+		}
 	}
 	if err != nil {
 		stderr.Println("getURL:", err)
@@ -49,6 +62,11 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Length", strconv.Itoa(len(url)))
 	w.WriteHeader(200)
 	io.WriteString(w, url)
+
+	urlMu.Lock()
+	urlJobs++
+	urlFb = true
+	urlMu.Unlock()
 }
 
 func postURL(w http.ResponseWriter, r *http.Request) {
@@ -56,14 +74,15 @@ func postURL(w http.ResponseWriter, r *http.Request) {
 
 	s := bufio.NewScanner(r.Body)
 	for s.Scan() {
-		url := strings.TrimSpace(s.Text())
-		if url == "" {
-			continue
-		}
-		if err := scheduler.PushURL(r.Context(), url); err != nil {
-			stderr.Printf("pushURL (%s): %s", url, err)
-			// return
-		}
+		go func(text string) {
+			url := strings.TrimSpace(text)
+			if !isLegitURL(url) {
+				return
+			}
+			if err := scheduler.PushURL(r.Context(), url); err != nil {
+				stderr.Printf("pushURL (%s): %s", url, err)
+			}
+		}(s.Text())
 	}
 	if err := s.Err(); err != nil {
 		stderr.Println("pushURL:", err)
@@ -71,24 +90,32 @@ func postURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	select {
+	case urlWait <- struct{}{}:
+	default:
+	}
+
 	w.WriteHeader(204) // 204 No Content
+
+	htmlMu.Lock()
+	htmlJobs--
+	if htmlJobs < 0 {
+		htmlJobs = 0
+	}
+	htmlMu.Unlock()
 }
 
 func getHTML(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Length", "0")
 
-	mu.RLock()
-	o := owari
-	mu.RUnlock()
-	if o {
-		stdout.Println("URL drained! (to getHTML)")
-		w.WriteHeader(410) // 410 Gone
-		return
-	}
-
 REFETCH:
 	html, isDrained, err := scheduler.PopHTML(r.Context())
 	if isDrained {
+		if isOwari() {
+			stdout.Println("OWATTA! (from getHTML)")
+			w.WriteHeader(410)
+			return
+		}
 		stdout.Println("HTML temporarily drained, waiting.")
 		select {
 		case <-htmlWait:
@@ -107,6 +134,11 @@ REFETCH:
 	w.Header().Set("Content-Length", strconv.Itoa(len(html)))
 	w.WriteHeader(200)
 	io.WriteString(w, html)
+
+	htmlMu.Lock()
+	htmlJobs++
+	htmlFb = true
+	htmlMu.Unlock()
 }
 
 func postHTML(w http.ResponseWriter, r *http.Request) {
@@ -138,4 +170,11 @@ func postHTML(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(204)
+
+	urlMu.Lock()
+	urlJobs--
+	if urlJobs < 0 {
+		urlJobs = 0
+	}
+	urlMu.Unlock()
 }

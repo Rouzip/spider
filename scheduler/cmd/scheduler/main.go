@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	redisURL = os.Getenv("DS_REDIS")
-	bind     = os.Getenv("DS_BIND")
+	redisURL = os.Getenv("DS_REDIS") // redis://:@127.0.0.1:6379/0
+	bind     = os.Getenv("DS_BIND")  // 127.0.0.1:30904
 
 	stdout = log.New(os.Stdout, "[I] ", log.Lmicroseconds|log.Lshortfile)
 	stderr = log.New(os.Stderr, "[E] ", log.Lmicroseconds|log.Lshortfile)
